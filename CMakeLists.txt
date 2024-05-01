@@ -15,12 +15,18 @@ enable_testing()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
+
+set(ModelInference_Dir ${CMAKE_SOURCE_DIR}/src/model_inference)
+
 set(Process_Dir ${CMAKE_SOURCE_DIR}/src/process)
 set(PNC_Map_Dir ${CMAKE_SOURCE_DIR}/src/pnc_map)
 set(UI_Dir ${CMAKE_SOURCE_DIR}/src/ui)
 
 # 第三方库
 include("./cmake/find_qt5.cmake")
+include("./cmake/find_concurrentqueue.cmake")
+include("./cmake/find_plog.cmake")
+find_package(OpenCV REQUIRED)
 
 # 添加子目录
 add_subdirectory(src)

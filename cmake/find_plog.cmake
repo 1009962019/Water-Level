@@ -1,0 +1,1 @@
+set(PLOG_Dir ${CMAKE_SOURCE_DIR}/3rdparty/plog/include)
