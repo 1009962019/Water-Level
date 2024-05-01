@@ -5,8 +5,6 @@ set(GUI_SOURCES )
 add_subdirectory(image_capture)
 add_subdirectory(model_inference)
 add_subdirectory(image_process)
-add_subdirectory(pnc_map)
-add_subdirectory(process)
 add_subdirectory(ui)
 
 add_executable(${PROJECT_NAME} main.cpp ${GUI_SOURCES})

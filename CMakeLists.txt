@@ -17,9 +17,6 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 set(Src_Dir ${CMAKE_SOURCE_DIR}/src)
 set(ModelInference_Dir ${CMAKE_SOURCE_DIR}/src/model_inference)
-
-set(Process_Dir ${CMAKE_SOURCE_DIR}/src/process)
-set(PNC_Map_Dir ${CMAKE_SOURCE_DIR}/src/pnc_map)
 set(UI_Dir ${CMAKE_SOURCE_DIR}/src/ui)
 
 # µÚÈý·½¿â
