@@ -34,6 +34,8 @@
 /build
 /bin
 /.vscode
+/.idea
 /model
 /cmake-build-debug
 /cmake-build-release
+*.user
