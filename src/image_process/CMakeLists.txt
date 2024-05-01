@@ -15,8 +15,10 @@ target_link_libraries(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${PLOG_Dir}
     ${OpenCV_INCLUDE_DIRS}
     ${concurrentqueue_Dir}
     ${ModelInference_Dir}
+    ${Src_Dir}
 )

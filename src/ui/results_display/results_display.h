@@ -1,7 +1,7 @@
 #ifndef RESULTS_DISPLAY_H
 #define RESULTS_DISPLAY_H
 
-#include "config/ParamSet.h"
+#include "common/ParamSet.h"
 #include "image_process/image_process_thread.h"
 #include "opencv2/opencv.hpp"
 

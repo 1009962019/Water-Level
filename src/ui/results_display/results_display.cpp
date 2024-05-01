@@ -1,4 +1,5 @@
 #include "results_display.h"
+#include "Config/Config.h"
 
 
 ResultsDisplay::ResultsDisplay(QString pos, QLabel *label_preview)

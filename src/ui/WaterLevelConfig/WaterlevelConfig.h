@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QStandardItem>
 #include <QStandardItemModel>
-#include "config/Config.h"
+#include "Config/Config.h"
 #include <opencv2/opencv.hpp>
 
 namespace Ui

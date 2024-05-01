@@ -5,21 +5,25 @@
 /***************************************************/
 
 #include "water_level_process.h"
+#include "common/ParamSet.h"
+#include <numeric>
+#include <algorithm>
+#include <random>
 
 /**
  * @brief crop_ROI 裁剪水位图像ROI区域
  * @param src 水位图像
  * @param position  闸室位置，用于获取不同的裁剪区域
  */
-void crop_ROI(cv::Mat& src, QString position)
+void crop_ROI(cv::Mat &src, QString position)
 {
-    WaterlevelCameraParam* param = Config::get_instance()->get_waterlevel_param(position);  //获取水位相机参数
-
+    // WaterlevelCameraParam* param = Config::get_instance()->get_waterlevel_param(position);  //获取水位相机参数
+    WaterlevelCameraParam *param = new WaterlevelCameraParam;
     int x1 = param->x1;
     int y1 = param->y1;
     int x2 = x1 + param->w;
     int y2 = y1 + param->h;
-    src = src(cv::Rect(cv::Point2d(x1, y1), cv::Point2d(x2, y2)));  //裁剪图像
+    src = src(cv::Rect(cv::Point2d(x1, y1), cv::Point2d(x2, y2))); // 裁剪图像
 }
 
 /**
@@ -27,18 +31,18 @@ void crop_ROI(cv::Mat& src, QString position)
  * @param rough_output 粗检测掩膜图
  * @return 压缩图像中的左上角y坐标
  */
-int get_waterline_position(cv::Mat& rough_output)
+int get_waterline_position(cv::Mat &rough_output)
 {
     /************由分割得到的掩膜图包含三类，BGR像素值分别为闸室墙(0,0,0)，水体(0,0,128)，船舶(0,128,0)，对图像的R通道除以128，方便提取闸室墙与水体的边界***************/
     cv::Mat convert;
     rough_output.convertTo(convert, CV_32F, 1.0);
-    convert = convert / cv::Scalar(1.0, 1.0, 128.0);    //对图像的R通道除以128
+    convert = convert / cv::Scalar(1.0, 1.0, 128.0); // 对图像的R通道除以128
 
     /***********************************求边界图**********************************/
     cv::Mat gray, sobel_y;
     cv::cvtColor(convert, gray, cv::COLOR_BGR2GRAY);
     cv::Sobel(gray, sobel_y, CV_64F, 0, 1);
-    //cv_show(sobel_y);
+    // cv_show(sobel_y);
 
     /***********************统计每一行中闸室墙与水体的边界点的个数**********************/
     vector<int> sum_each_rows(sobel_y.rows, 0);
@@ -46,7 +50,7 @@ int get_waterline_position(cv::Mat& rough_output)
     {
         for (int col = 0; col < sobel_y.cols; col++)
         {
-            if (sobel_y.at<double>(row, col) > 0 && sobel_y.at<double>(row, col) <= 4)  //边界图上响应值在(0,4]范围内的为闸室墙与水体的边界点
+            if (sobel_y.at<double>(row, col) > 0 && sobel_y.at<double>(row, col) <= 4) // 边界图上响应值在(0,4]范围内的为闸室墙与水体的边界点
             {
                 sum_each_rows[row] += 1;
             }
@@ -57,9 +61,7 @@ int get_waterline_position(cv::Mat& rough_output)
     for (int i = 0; i < sum_each_rows.size() - 60; i++)
     {
         sum_each_rows[i] = accumulate(&sum_each_rows[i], &sum_each_rows[i + 60], 0, [](int a, int b)
-        {
-            return a + b;
-        });
+                                      { return a + b; });
     }
     sum_each_rows.assign(sum_each_rows.begin(), sum_each_rows.end() - 60);
 
@@ -69,7 +71,7 @@ int get_waterline_position(cv::Mat& rough_output)
     map<int, int> number_freq_dict;
     for (int n : sum_each_rows)
     {
-        if(number_freq_dict.find(n) != number_freq_dict.end())
+        if (number_freq_dict.find(n) != number_freq_dict.end())
             number_freq_dict[n]++;
         else
             number_freq_dict[n] = 1;
@@ -79,7 +81,7 @@ int get_waterline_position(cv::Mat& rough_output)
     int max_freq = 0;
     int max_freq_number = -1;
     int two_multiply = 0;
-    for (auto  m : number_freq_dict)
+    for (auto m : number_freq_dict)
     {
         if (m.first > 100 && m.first * m.second > two_multiply)
         {
@@ -88,17 +90,18 @@ int get_waterline_position(cv::Mat& rough_output)
             two_multiply = m.first * m.second;
         }
     }
-    //cout << "max freq " << max_freq << endl;
-    //cout << "max freq number " << max_freq_number << endl;
+    // cout << "max freq " << max_freq << endl;
+    // cout << "max freq number " << max_freq_number << endl;
 
     /****************************求裁剪区域左上角的坐标**********************************/
     int left_up_y = 0;
     for (int i = 0; i < sum_each_rows.size(); i++)
     {
-        if (sum_each_rows[i] == max_freq_number)    //对所有边界点数量最多的窗口的高度求平均
+        if (sum_each_rows[i] == max_freq_number) // 对所有边界点数量最多的窗口的高度求平均
             left_up_y += i;
     }
-    if(max_freq == 0) max_freq = 1; //防止除0
+    if (max_freq == 0)
+        max_freq = 1; // 防止除0
     left_up_y /= max_freq;
 
     return left_up_y;
@@ -111,12 +114,12 @@ int get_waterline_position(cv::Mat& rough_output)
  * @param pos 闸室位置，用于获取不同的水位线固定斜率
  * @return 水位线直线方程参数ax+by+c=0
  */
-vector<double> fitting_waterline(cv::Mat& fine_output, int left_up_y_in_src, QString pos)
+vector<double> fitting_waterline(cv::Mat &fine_output, int left_up_y_in_src, QString pos)
 {
     /************由分割得到的掩膜图包含三类，BGR像素值分别为闸室墙(0,0,0)，水体(0,0,128)，船舶(0,128,0)，对图像的R通道除以128，方便提取闸室墙与水体的边界***************/
     cv::Mat convert;
     fine_output.convertTo(convert, CV_32F, 1.0);
-    convert = convert / cv::Scalar(1.0, 1.0, 128.0);    //对图像的R通道除以128
+    convert = convert / cv::Scalar(1.0, 1.0, 128.0); // 对图像的R通道除以128
 
     /***********************************求边界图**********************************/
     cv::Mat gray, sobel_y;
@@ -129,16 +132,17 @@ vector<double> fitting_waterline(cv::Mat& fine_output, int left_up_y_in_src, QSt
     {
         for (int col = 0; col < sobel_y.cols; col++)
         {
-            if (sobel_y.at<double>(row, col) > 0 && sobel_y.at<double>(row, col) <= 4)  //边界图上响应值在(0,4]范围内的为闸室墙与水体的边界点
+            if (sobel_y.at<double>(row, col) > 0 && sobel_y.at<double>(row, col) <= 4) // 边界图上响应值在(0,4]范围内的为闸室墙与水体的边界点
             {
-                if (pos == "outside_waterlevel" && col < 450) continue;     //由于上游引航道的水位图像最左侧有根立柱凸出来，舍弃这部分边界点
-                points_in_src.push_back(cv::Point2d(col, row + left_up_y_in_src));    //存储水位线边界点
+                if (pos == "outside_waterlevel" && col < 450)
+                    continue;                                                      // 由于上游引航道的水位图像最左侧有根立柱凸出来，舍弃这部分边界点
+                points_in_src.push_back(cv::Point2d(col, row + left_up_y_in_src)); // 存储水位线边界点
             }
         }
     }
 
     /****************边界点集为空或边界点数量过少，表明未检测到水位线*******************/
-    if(points_in_src.empty() || points_in_src.size() <= 200)
+    if (points_in_src.empty() || points_in_src.size() <= 200)
     {
         vector<double> line_equation = {0.0, 0.0, 0.0};
         return line_equation;
@@ -146,8 +150,8 @@ vector<double> fitting_waterline(cv::Mat& fine_output, int left_up_y_in_src, QSt
 
     double A = 0, B = 0, C = 0;
     vector<bool> inliers;
-    fitLineRANSAC(points_in_src, A, B, C, inliers);     //采用RANSAC方法进行直线拟合
-    if(fabs(A) >= 0.03 || fabs(B) <= 0.9995)    //若水位线斜率偏离太大，使用固定斜率再次拟合
+    fitLineRANSAC(points_in_src, A, B, C, inliers); // 采用RANSAC方法进行直线拟合
+    if (fabs(A) >= 0.03 || fabs(B) <= 0.9995)       // 若水位线斜率偏离太大，使用固定斜率再次拟合
         fitLineWithConstant_k(points_in_src, A, B, C, pos);
     vector<double> line_equation = {A, B, C};
     return line_equation;
@@ -168,22 +172,23 @@ vector<double> fitting_waterline(cv::Mat& fine_output, int left_up_y_in_src, QSt
 void fitLineWithConstant_k(vector<cv::Point2d> ptSet, double &a, double &b, double &c, QString position)
 {
     int N = ptSet.size();
-    double residual_error = 3; //内点阈值
+    double residual_error = 3; // 内点阈值
 
-    WaterlevelCameraParam* param = Config::get_instance()->get_waterlevel_param(position);  //获取水位相机参数
-    a = param->constant_a;  //取水位线固定斜率
+    // WaterlevelCameraParam* param = Config::get_instance()->get_waterlevel_param(position);  //获取水位相机参数
+    WaterlevelCameraParam *param = new WaterlevelCameraParam;
+    a = param->constant_a; // 取水位线固定斜率
     b = param->constant_b;
 
     srand((unsigned)time(NULL));
-    random_shuffle(ptSet.begin(), ptSet.end());
+    std::shuffle(ptSet.begin(), ptSet.end(), std::mt19937{std::random_device{}()});
     int inlier_count = 0;
-    for(int n = 0; n < N; n++)
+    for (int n = 0; n < N; n++)
     {
         cv::Point2d pt = ptSet[n];
         double _c = -a * pt.x - b * pt.y;
 
         int _inlier_count = 0;
-        //内点检验
+        // 内点检验
         for (unsigned int i = 0; i < ptSet.size(); i++)
         {
             cv::Point2d pt = ptSet[i];
@@ -209,12 +214,12 @@ void fitLineWithConstant_k(vector<cv::Point2d> ptSet, double &a, double &b, doub
  */
 void fitLineRANSAC(vector<cv::Point2d> ptSet, double &a, double &b, double &c, vector<bool> &inlierFlag)
 {
-    double residual_error = 3; //内点阈值
+    double residual_error = 3; // 内点阈值
 
     bool stop_loop = false;
-    int maximum = 0;  //最大内点数
+    int maximum = 0; // 最大内点数
 
-    //最终内点标识及其残差
+    // 最终内点标识及其残差
     inlierFlag = vector<bool>(ptSet.size(), false);
     vector<double> resids_(ptSet.size(), 3);
     int sample_count = 0;
@@ -223,7 +228,7 @@ void fitLineRANSAC(vector<cv::Point2d> ptSet, double &a, double &b, double &c, v
     double res = 0;
 
     // RANSAC
-    srand((unsigned int)time(NULL)); //设置随机数种子
+    srand((unsigned int)time(NULL)); // 设置随机数种子
     vector<int> ptsID;
     for (unsigned int i = 0; i < ptSet.size(); i++)
         ptsID.push_back(i);
@@ -252,7 +257,7 @@ void fitLineRANSAC(vector<cv::Point2d> ptSet, double &a, double &b, double &c, v
         // 计算直线方程
         calcLinePara(pt_sam, a, b, c, res);
 
-        //内点检验
+        // 内点检验
         for (unsigned int i = 0; i < ptSet.size(); i++)
         {
             cv::Point2d pt = ptSet[i];
@@ -272,22 +277,22 @@ void fitLineRANSAC(vector<cv::Point2d> ptSet, double &a, double &b, double &c, v
             resids_ = residualstemp;
             inlierFlag = inlierstemp;
         }
-//        // 更新RANSAC迭代次数，以及内点概率
-//        if (inlier_count == 0)
-//        {
-//            N = 500;
-//        }
-//        else
-//        {
-//            double epsilon = 1.0 - double(inlier_count) / (double)ptSet.size(); //野值点比例
-//            double p = 0.99; //所有样本中存在1个好样本的概率
-//            double s = 2.0;
-//            N = int(log(1.0 - p) / log(1.0 - pow((1.0 - epsilon), s)));
-//        }
+        //        // 更新RANSAC迭代次数，以及内点概率
+        //        if (inlier_count == 0)
+        //        {
+        //            N = 500;
+        //        }
+        //        else
+        //        {
+        //            double epsilon = 1.0 - double(inlier_count) / (double)ptSet.size(); //野值点比例
+        //            double p = 0.99; //所有样本中存在1个好样本的概率
+        //            double s = 2.0;
+        //            N = int(log(1.0 - p) / log(1.0 - pow((1.0 - epsilon), s)));
+        //        }
         ++sample_count;
     }
 
-    //利用所有内点重新拟合直线
+    // 利用所有内点重新拟合直线
     vector<cv::Point2d> pset;
     for (unsigned int i = 0; i < ptSet.size(); i++)
     {
@@ -295,7 +300,7 @@ void fitLineRANSAC(vector<cv::Point2d> ptSet, double &a, double &b, double &c, v
             pset.push_back(ptSet[i]);
     }
 
-    if(pset.size() >= 2)
+    if (pset.size() >= 2)
         calcLinePara(pset, a, b, c, res);
 }
 
@@ -343,8 +348,7 @@ bool getSample(vector<int> set, vector<int> &sset)
         {
             for (int n = 0; n < 2; n++)
                 i[n] = int(uniformRandom() * (set.size() - 1));
-        }
-        while (!(i[1] != i[0]));
+        } while (!(i[1] != i[0]));
         for (int n = 0; n < 2; n++)
         {
             sset.push_back(i[n]);
@@ -379,4 +383,3 @@ double uniformRandom(void)
 {
     return (double)rand() / (double)RAND_MAX;
 }
-

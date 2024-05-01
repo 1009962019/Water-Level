@@ -1,0 +1,4 @@
+set(GUI_SOURCES 
+    ${GUI_SOURCES} 
+    ${CMAKE_CURRENT_SOURCE_DIR}/WaterlevelConfig.cpp
+    PARENT_SCOPE)

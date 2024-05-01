@@ -15,7 +15,7 @@ enable_testing()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-
+set(Src_Dir ${CMAKE_SOURCE_DIR}/src)
 set(ModelInference_Dir ${CMAKE_SOURCE_DIR}/src/model_inference)
 
 set(Process_Dir ${CMAKE_SOURCE_DIR}/src/process)

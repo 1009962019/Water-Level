@@ -1,7 +1,7 @@
 set(GUI_SOURCES
   ${GUI_SOURCES}
-  ui/mainwindow/mainwindow.cpp
-  ui/mainwindow/mainwindow.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mainwindow.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/mainwindow.h
   PARENT_SCOPE
 )
 
