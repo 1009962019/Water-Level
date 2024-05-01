@@ -7,6 +7,8 @@ add_subdirectory(model_inference)
 add_subdirectory(image_process)
 add_subdirectory(ui)
 
+#add_executable(${PROJECT_NAME} main.cpp)
+
 add_executable(${PROJECT_NAME} main.cpp ${GUI_SOURCES})
 
 target_include_directories(${PROJECT_NAME}
@@ -27,8 +29,4 @@ target_link_libraries(${PROJECT_NAME}
     ${OpenCV_LIBS}
     image_capture
     image_process
-)
-
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    WIN32_EXECUTABLE TRUE
 )

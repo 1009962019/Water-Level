@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 enable_testing()
 
-# ±äÁ¿ºÍÄ¿Â¼ÉèÖÃ
+# å˜é‡å’Œç›®å½•è®¾ç½®
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
@@ -19,12 +19,12 @@ set(Src_Dir ${CMAKE_SOURCE_DIR}/src)
 set(ModelInference_Dir ${CMAKE_SOURCE_DIR}/src/model_inference)
 set(UI_Dir ${CMAKE_SOURCE_DIR}/src/ui)
 
-# µÚÈı·½¿â
+# ç¬¬ä¸‰æ–¹åº“
 include("./cmake/find_qt5.cmake")
 include("./cmake/find_concurrentqueue.cmake")
 include("./cmake/find_plog.cmake")
 find_package(OpenCV REQUIRED)
 
-# Ìí¼Ó×ÓÄ¿Â¼
+# æ·»åŠ å­ç›®å½•
 add_subdirectory(src)
 add_subdirectory(test/map_test)
