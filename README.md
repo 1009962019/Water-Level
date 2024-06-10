@@ -1,12 +1,25 @@
-# Qt_template
-这是一个我总结的C++工程模板，适合各种Qt的C++项目，根目录下包含以下几个目录：
+# Introduction
 
-- 3rdparty:放没有提供`find_xxx.cmake`的第三方库的`.lib`和`.dll`文件
-- cmake:放`find_xxx.cmake`文件，将本地的库文件或是3rdparty的库文件引入项目
-- scripts:放一些脚本
-- src:项目的源代码，该目录不是直接放置所有源代码，源代码需要分模块进行放置
-  - widget:放自己实现的各个控件(继承自`QWidget`)的源码
-  - window:放自己实现的各个窗口(继承自`QMainWindow`)的源码
-  - dialog:放自己实现的各个对话框的(继承自`QDialog`)的源码
-  - ui:放控制`style`等外观的源码
-- test:单元测试的源代码，也是按模块进行放置
+> This is a project for water level measurement using computer vison technoloy.  
+
+
+
+# Getting Started
+
+## Denpendency
+
+This project uses some third part libraries such as :
+
+- plog
+- TensoRT
+- OpenCV
+- Qt5
+
+So first you may install these dependencies.
+
+
+
+## Model
+
+Cause this project uses **Senmantic Segmentation** to segment the water first, you may need to train such a model, and use TensorRT to convert it's format to `.engine`. And then, put these model file into the `/model` dir.
+
